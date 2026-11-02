@@ -1,0 +1,68 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '23 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'reova/dsh-purge'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Sync upstream without upstream workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'laoyu'
+          git config user.email 'yuruichang1@gmail.com'
+          git fetch --no-tags https://github.com/YuJunZhiXue/dsh-purge.git master
+          upstream_commit="$(git rev-parse FETCH_HEAD)"
+          current_commit="$(git rev-parse HEAD)"
+          workflow_backup="${RUNNER_TEMP}/sync-upstream.yml"
+          cp .github/workflows/sync-upstream.yml "$workflow_backup"
+
+          # Use the upstream tree while retaining only this fork's workflow.
+          git read-tree --reset -u "$upstream_commit"
+          git rm -r -f --ignore-unmatch .github/workflows
+          mkdir -p .github/workflows
+          cp "$workflow_backup" .github/workflows/sync-upstream.yml
+          git add .github/workflows/sync-upstream.yml
+
+          parents=(-p "$current_commit")
+          upstream_changed=false
+          if ! git merge-base --is-ancestor "$upstream_commit" "$current_commit"; then
+            parents+=(-p "$upstream_commit")
+            upstream_changed=true
+          fi
+          last_commit_time="$(git show -s --format=%ct "$current_commit")"
+          age_seconds=$(( $(date +%s) - last_commit_time ))
+          if git diff --cached --quiet && [ "$upstream_changed" = false ] && [ "$age_seconds" -lt 3888000 ]; then
+            echo 'Already up to date.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Preserve upstream ancestry and avoid force-pushing fork history.
+          tree="$(git write-tree)"
+          if [ "$upstream_changed" = true ] || ! git diff --cached --quiet; then
+            message="chore: sync upstream ${upstream_commit:0:12}"
+          else
+            message='chore: keep scheduled sync active'
+          fi
+          new_commit="$(git commit-tree "$tree" "${parents[@]}" -m "$message")"
+          git update-ref HEAD "$new_commit" "$current_commit"
+          git push origin HEAD:refs/heads/master
+          echo "Synced upstream commit: $upstream_commit" >> "$GITHUB_STEP_SUMMARY"
