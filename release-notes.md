@@ -1,3 +1,48 @@
+# 1.6.93
+
+- **Windows 换包诊断（#193）**：broker 与助手进程的退出码分开记录。助手提前退出或被 Job Object 回收时，日志写明 `child_exit_code`；拿不到进程句柄时记为 `unknown`，不再把启动器的 `code=1` 当成助手原因。
+- 失败状态文件本身无法替换时，助手把原始 Windows 错误（HRESULT / Win32 / 状态写入错误）追加到独立的 `.json.broker.log`，不再静默丢失；不伪造确认或重试，原归档保留。
+- 隔离 Windows 11 环境用官方 DSH 0.2.2-rc.1 Electron 运行时验证成功换包、提前退出、状态文件被占用与释放后重试，专项回归 5/5。报告者的现场根因仍未确认，本版只改进诊断与保留证据。
+- 1.6.92 的 rc.2 兼容清单与 1.6.90/1.6.91 的修复全部保留。
+
+验证：全套测试通过；Windows 专项测试在 Windows 环境执行。
+
+# 1.6.92
+
+- **0.2.2-rc.2 进入已验证清单**：`QUALIFIED_HOST_VERSIONS` 与 `package.json` 的 `dshReleases` 加入 `0.2.2-rc.2`（同时补上漏登记的 `0.2.2-rc.1`）。面板的「兼容级别」不再显示「未验证版本」。
+- 依据：官方 0.2.2-rc.2 桌面构建上 86 条补丁为 74 applied / 0 drift，自检 ok；破甲模块闸门、运行探针、四类模型层实跑与 rc.2 压缩回退锚点回归通过（macOS）。Windows 该构建仅验证预设卡片与启动诊断，未复测补丁。
+- `test/owner-review-fixes.test.mjs` 新增 official + bundled-host + rc.2 的 qualified 断言。
+
+# 1.6.91
+
+- **#92 幂等修复**：`HOST_MAX_HTTP_HEADER_SIZE` 原来每次「应用」都会在 desktop 启动参数里再插一条 `--max-http-header-size=262144`，因为锚点 `"--expose-internals",` 在写入后仍然存在。功能测试里连点两次「应用」暴露了这个问题（本机 main.js 一度堆到 5 条）。
+  - 锚点改为一次性匹配整段参数，并把旧版本已经留下的重复项收敛成一条；
+  - 第二次应用不再产生任何写入（`applied 0 / already 74`，main.js 哈希不变）；
+  - 新增 `test/header-limit-idempotent.test.mjs`：首次插入恰好一条、二次不变、旧重复可收敛。
+- 1.6.90 的 rc.2 回退补丁修复全部保留。
+
+验证：本机 rc.2 连续两次应用幂等、哈希稳定；自检 ok；570+2 测试通过。
+
+# 1.6.90
+
+- **0.2.2-rc.2 回退补丁重锚**：#56/#77 原来按 0.2.1 的格式化源码定位；rc.2 把会话客户端打成单行压缩包，旧锚点全部落空，自检的「回退不残留」一层变 `broken`。本版为压缩形态补了锚点：
+  - #56 在 `replaceWindow` 前过滤被 `surfaceOp{op:"replace",startSeq,endSeq}` 覆盖的事件，并连带藏掉整轮（含 turn/start、turn/end），保留 system/message；
+  - #77 在 `append` 收到 replace 操作时，先从现有窗口剔除被替换范围，再带上新记录重建，已发送但被撤回的消息立即消失。
+  两条都保留 0.2.1 旧锚点作为回退路径，新增 `test/rc2-rewind-client.test.mjs` 用压缩片段钉住。
+- 其余 84 条补丁在 rc.2 上维持 applied，无漂移。
+
+验证：本机 rc.2 宿主应用后自检 `ok`、零漂移；压缩片段回归通过；完整测试套件 570 通过。
+
+# 1.6.89
+
+- **#185 profile 预设重复注册**：注册前读取宿主 Loader 已合成的有效 profile 声明，同一 `config.id` 由宿主注册和释放；状态文件标为 profile-owned，委托登记不再算加载通过。判断不读其他 profile、不按 YAML 文本猜测。
+- **#174 历史别名折叠**：设置页 Agent 预设卡片在存在可用当前子预设时折叠健康历史别名；默认项、异常项和当前子预设缺失时的历史项仍可见。注册表与历史会话 ID 不变。
+- **#186 对话预设菜单**：打开原生菜单时按只读名册匹配，折叠普通历史别名并让方向键越过隐藏行；保留当前选择、默认项、同名歧义与唯一可用项，卸载时恢复原控件。
+- **#173 Tauri 托管入口**：识别 Windows/macOS Tauri 进程中符合托管目录结构的 CLI，区分文件存在、缺失、读取失败与选中其他实例；Tauri 归档只读核对包名、版本、bin 与入口，不为这类入口显示 Electron 换包建议。未实现 Tauri 归档写入或维护命令路由。
+- **#192 启动诊断一致**：启动日志与维护接口共用当前实例的兼容性查询；官方 0.2.2-rc.2 桌面端跑 Web profile 时不再把已识别归档误报成「未定位到宿主目录」。
+
+验证：#185 在 Mac/Windows 4090 用 0.2.1-rc.2 Loader 与 dsh-agent-preset 覆盖两种启动顺序、disabled 和其他 profile，使用计数登记服务检测双注册；#186 用 0.2.2-rc.1 实际 AgentPresetSeat 与 Menu 组件验证别名折叠与方向键；Tauri 归档在 Windows 4090 用官方 dsh-0.2.2-rc.1 核心只读核对（包名/版本/bin/入口，CLI --version 一致）；#192 在 macOS arm64 与 Windows 4090 用 RC.2 隔离 Web profile 复现旧误报并确认两端一致，完整回归资格仍为 false。隔离本地全套 568 通过、23 跳过；面板 31 项、浏览器回归、格式与构建一致性通过。
+
 # 1.6.88
 
 - 补齐 1.6.87 的 Windows 维护锁修复：守卫目录为空时 `rmdir` 也可能瞬时 `EPERM`/`EACCES`/`EBUSY`，同样按可重试处理；持续失败仍报 `MAINTENANCE_BUSY`，不会误删活动锁。
