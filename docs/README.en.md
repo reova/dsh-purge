@@ -8,9 +8,11 @@ A self-hosted add-on for DeepSeek Harness (known in the community as a 破甲 / 
 
 [![Release](https://img.shields.io/github/v/release/kingcharleslzy-ai/dsh-purge?label=release)](https://github.com/kingcharleslzy-ai/dsh-purge/releases)
 
-Current version 1.7.18 · targets **DSH Desktop 0.2.2-rc.3** (0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 also pass)
+Current version 1.7.20 · targets **DSH Desktop 0.2.2-rc.3** (0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 also pass)
 
 **Original project and author:** independently maintained from [dsh-purge by 小杨 / YuJunZhiXue](https://github.com/YuJunZhiXue/dsh-purge). The original repository is available again. Original attribution, copyright and the MIT license are retained; this community distribution is not an official upstream release.
+
+[Install with an agent or by hand](#install)
 
 </div>
 
@@ -48,14 +50,25 @@ Local learning, personal projects, automation experiments and maintenance work. 
 
 ## Install
 
-**DSH provides the official plugin UI and `dsh plugin` CLI. Our `install.sh` / `install.ps1` are community-maintained wrappers, not DeepSeek scripts.**
+**Ask your agent** by copying this request:
 
-- First installation: use DSH's Plugins install dialog. Following the current official guide, open Plugins → More beside Experimental plugins → Custom plugin market, then Discover → Add index source. Our community index: `https://kingcharleslzy-ai.github.io/dsh-purge/index.json`. Check the owner `kingcharleslzy-ai/dsh-purge` and package `dsh-purge-community` before confirming.
-- Existing `dsh-purge` or separate panel installation: use the community installer to back up and migrate in place. Do not uninstall first or activate both packages.
+> Install the latest stable release of https://github.com/kingcharleslzy-ai/dsh-purge into the DSH instance I use. Read the installation section in AGENTS.md first. If an older Purge is installed, migrate it in place and keep my settings. Report the installed version and profile. Leave the restart to me.
+
+**Install by hand in DSH Desktop**
+
+1. Open Plugins → Discover → Add index source. If Discover is missing, enable Custom plugin market under Plugins → Experimental plugins → More.
+2. Paste `https://kingcharleslzy-ai.github.io/dsh-purge/index.json`, save, and select **dsh-purge Community**.
+3. Verify the repository is `kingcharleslzy-ai/dsh-purge`, click Install, then check the version in the installed plugins list.
+
+Catalog maintainers can synchronize versioned install targets from the [community index](https://kingcharleslzy-ai.github.io/dsh-purge/index.json). Match the package name and repository, and keep the version and commit from the same entry.
+
+Leave the npm registry at its working value. If pnpm requests `github.com/…/yaml` and gets a 404, open Add plugin, paste the versioned TGZ link from the [latest stable release](https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest) into the package field, select the official npm registry (or your working private registry), and retry.
+
+- Existing legacy Purge or standalone panel installations: use the community installer below for an in-place migration that preserves settings.
 - CLI/Web users who already have `dsh` on PATH and use the `web` profile can use the official command below. Desktop users should not download another npx host to install into their existing desktop profile.
 
 ```sh
-dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.7.18/dsh-purge-community-1.7.18.tgz"
+dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.7.20/dsh-purge-community-1.7.20.tgz"
 ```
 
 Use the actual instance's profile and `DSH_HOME`. This project distributes via GitHub; do not substitute bare npm package names. The official command does not run our extra Release SHA256 check, migration snapshot or rollback wrapper.
@@ -76,7 +89,7 @@ A full page in the left sidebar: one line of state at the top, "Apply" as the pr
 
 ## Updates
 
-1.7.18 turns the 14 permission patches on by default behind one group switch, gives context management its own switch (off by default), and rebuilds the status page around four state counts, two switches and a filterable detail list. See the [release notes](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.7.18).
+1.7.20 makes the audit labels honest: `partial_refused` (an answer that hands over background then declines) and `empty_after_retry` (a retry that returned almost nothing) no longer count as success, plus an opt-in seed prefill arm. See the [release notes](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.7.20).
 
 Two separate preferences (check / install), default check-only every six hours. Installing never restarts the app — you decide when to reopen it.
 
@@ -84,7 +97,7 @@ Two separate preferences (check / install), default check-only every six hours. 
 
 On DSH 0.2.2-rc.2 the 86 patches apply as 74 applied / 0 drift and selfcheck is ok on macOS; bypass gates and the minified rewind anchors were verified there. Windows coverage for this host build is limited to preset cards and startup diagnostics.
 
-Plugin `dsh-purge-community` 1.7.18 · verified on DSH Desktop 0.2.2-rc.3 / 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 · Node ≥ 18.
+Plugin `dsh-purge-community` 1.7.20 · verified on DSH Desktop 0.2.2-rc.3 / 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 · Node ≥ 18.
 
 ## Troubleshooting
 
